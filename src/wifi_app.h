@@ -10,7 +10,8 @@
  *
  * @author christophermena
  * @date July 30, 2025
- * @version 2.0
+ * @version 1.0
+ * @note Last Updated: August 1, 2025 at 10:30 AM
  */
 
 #ifndef MAIN_WIFI_APP_H_
