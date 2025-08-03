@@ -142,7 +142,7 @@ static void lcd_send_data(uint8_t data)
 }
 
 // Initialize LCD display with I2C interface (main initialization function)
-esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)
+esp_err_t liquid_crystal_i2c_init(uint8_t addr, uint8_t cols, uint8_t rows)
 {
     esp_err_t ret;
     
@@ -205,7 +205,7 @@ void lcd_home(void)
 }
 
 // Set cursor position for next character output (zero-based coordinates)
-void lcd_setCursor(uint8_t col, uint8_t row)
+void lcd_set_cursor(uint8_t col, uint8_t row)
 {
     // DDRAM address offsets for different LCD configurations
     uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};        // Row 0, 1, 2, 3 start addresses in DDRAM
@@ -233,13 +233,13 @@ void lcd_print(const char* str)
 }
 
 // Print single character to LCD at current cursor position
-void lcd_printChar(char c)
+void lcd_print_char(char c)
 {
     lcd_send_data(c);                                         // Send character directly as data byte
 }
 
 // Print integer value with automatic string conversion
-void lcd_printInt(int num)
+void lcd_print_int(int num)
 {
     char buffer[12];                                          // Buffer large enough for 32-bit signed integer
     snprintf(buffer, sizeof(buffer), "%d", num);             // Convert integer to string representation
@@ -247,7 +247,7 @@ void lcd_printInt(int num)
 }
 
 // Print floating-point number with specified decimal places
-void lcd_printFloat(float num, uint8_t decimals)
+void lcd_print_float(float num, uint8_t decimals)
 {
     char buffer[16];                                          // Buffer for floating-point string representation
     char format[8];                                           // Buffer for format string creation

@@ -37,12 +37,12 @@ void app_main(void)
     wifi_app_start();
 
     // Initialize I2C LCD display (16x2 at address 0x27)
-    if (LiquidCrystal_I2C_Init(0x27, 16, 2) == ESP_OK) 
+    if (liquid_crystal_i2c_init(0x27, 16, 2) == ESP_OK) 
     {
         lcd_clear();
-        lcd_setCursor(0, 0);
+        lcd_set_cursor(0, 0);
         lcd_print("Weather Station");
-        lcd_setCursor(0, 1);
+        lcd_set_cursor(0, 1);
         lcd_print("Initializing...");
         ESP_LOGI("MAIN", "LCD initialized successfully");
     } else {
@@ -64,9 +64,9 @@ void app_main(void)
     
     // Clear LCD and show ready message
     lcd_clear();
-    lcd_setCursor(0, 0);
+    lcd_set_cursor(0, 0);
     lcd_print("Weather Station");
-    lcd_setCursor(0, 1);
+    lcd_set_cursor(0, 1);
     lcd_print("Ready!");
     vTaskDelay(pdMS_TO_TICKS(2000));
 
@@ -85,14 +85,14 @@ void app_main(void)
             
             // Display on LCD
             lcd_clear();
-            lcd_setCursor(0, 0);
+            lcd_set_cursor(0, 0);
             lcd_print("Temp: ");
-            lcd_printInt(temperature);
+            lcd_print_int(temperature);
             lcd_print(temp_unit);
             
-            lcd_setCursor(0, 1);
+            lcd_set_cursor(0, 1);
             lcd_print("Humidity: ");
-            lcd_printInt(humidity);
+            lcd_print_int(humidity);
             lcd_print("%");
             
             // Log successful sensor reading
@@ -103,9 +103,9 @@ void app_main(void)
         {
             // Display error on LCD
             lcd_clear();
-            lcd_setCursor(0, 0);
+            lcd_set_cursor(0, 0);
             lcd_print("Sensor Error!");
-            lcd_setCursor(0, 1);
+            lcd_set_cursor(0, 1);
             lcd_print("Check DHT11");
             
             // Log sensor read failure and indicate error via LED

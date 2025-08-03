@@ -107,21 +107,21 @@
 #define LCD_DELAY_INIT          50000   // Initialization delay in microseconds
 
 // Function prototypes
-esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows);
+esp_err_t liquid_crystal_i2c_init(uint8_t addr, uint8_t cols, uint8_t rows);
 void lcd_clear(void);
 void lcd_home(void);
-void lcd_setCursor(uint8_t col, uint8_t row);
+void lcd_set_cursor(uint8_t col, uint8_t row);
 void lcd_print(const char* str);
-void lcd_printChar(char c);
-void lcd_printInt(int num);
-void lcd_printFloat(float num, uint8_t decimals);
+void lcd_print_char(char c);
+void lcd_print_int(int num);
+void lcd_print_float(float num, uint8_t decimals);
 void begin(uint8_t cols, uint8_t rows, uint8_t charsize);
 void home(void);
 void no_display(void);
 void display(void);
 void no_blink(void);
 void blink(void);
-void no_cursor();
+void no_cursor(void);
 void cursor(void);
 void scroll_display_left(void);
 void scroll_display_right(void);
