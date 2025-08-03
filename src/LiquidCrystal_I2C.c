@@ -211,10 +211,12 @@ void lcd_set_cursor(uint8_t col, uint8_t row)
     uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};        // Row 0, 1, 2, 3 start addresses in DDRAM
     
     // Boundary checking to prevent invalid memory access
-    if (row >= lcd_rows) {
+    if (row >= lcd_rows) 
+    {
         row = lcd_rows - 1;                                   // Clamp row to maximum valid value
     }
-    if (col >= lcd_cols) {
+    if (col >= lcd_cols) 
+    {
         col = lcd_cols - 1;                                   // Clamp column to maximum valid value
     }
     
@@ -227,7 +229,8 @@ void lcd_print(const char* str)
 {
     if (str == NULL) return;                                  // Safety check for null pointer
     
-    while (*str) {                                            // Loop through each character until null terminator
+    while (*str) 
+    {                                            // Loop through each character until null terminator
         lcd_send_data(*str++);                                // Send character data and increment pointer
     }
 }
@@ -359,8 +362,23 @@ void backlight(void)
 }
 
 // Legacy compatibility functions for alternative naming conventions
-void print_left(void) { left_to_right(); }                   // Alias for left_to_right() function
-void print_right(void) { right_to_left(); }                  // Alias for right_to_left() function
-void shift_increment(void) { autoscroll(); }                 // Alias for autoscroll() function
-void shift_decrement(void) { no_autoscroll(); }              // Alias for no_autoscroll() function
+void print_left(void) 
+{ 
+    left_to_right(); 
+}                   // Alias for left_to_right() function
+
+void print_right(void) 
+{ 
+    right_to_left(); 
+}                  // Alias for right_to_left() function
+
+void shift_increment(void) 
+{ 
+    autoscroll(); 
+}                 // Alias for autoscroll() function
+
+void shift_decrement(void) 
+{ 
+    no_autoscroll(); 
+}              // Alias for no_autoscroll() function
 

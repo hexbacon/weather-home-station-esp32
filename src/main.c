@@ -45,7 +45,9 @@ void app_main(void)
         lcd_set_cursor(0, 1);
         lcd_print("Initializing...");
         ESP_LOGI("MAIN", "LCD initialized successfully");
-    } else {
+    } 
+    else 
+    {
         ESP_LOGE("MAIN", "Failed to initialize LCD");
     }
 

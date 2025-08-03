@@ -292,7 +292,14 @@ esp_err_t http_server_OTA_update_handler(httpd_req_t *req)
     }
 
     // We won't update the global variables throughout the file, so send message about the status
-    if (flash_successful) {http_server_monitor_send_message(HTTP_MSG_OTA_UPDATE_SUCCESSFUL);} else {http_server_monitor_send_message(HTTP_MSG_OTA_UPDATE_FAILED);}
+    if (flash_successful) 
+    {
+        http_server_monitor_send_message(HTTP_MSG_OTA_UPDATE_SUCCESSFUL);
+    } 
+    else 
+    {
+        http_server_monitor_send_message(HTTP_MSG_OTA_UPDATE_FAILED);
+    }
     return ESP_OK;
 }
 
