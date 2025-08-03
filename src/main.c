@@ -60,7 +60,7 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     // Temperature unit toggle (true = Fahrenheit, false = Celsius)
-    bool temp_fahrenheit = false;
+    bool temp_fahrenheit = true;
     
     // Clear LCD and show ready message
     lcd_clear();
