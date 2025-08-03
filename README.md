@@ -14,16 +14,20 @@ The project allows you to monitor the temperature and humidity in your home and 
   - [WiFi Application Logic (`wifi_app.c` and `wifi_app.h`)](#wifi_appc-and-wifi_apph---wifi-application-logic)
 - [Part 3: HTTP Server](#http_serverc-and-http_serverh---http-server-logic)
 - [Part 4: DHT11 Temperature and Humidity Sensor](#part-4-dht11-temperature-and-humidity-sensor)
-- [Part 5: Web Interface Files](#part-5-web-interface-files)
+- [Part 5: I2C LCD Display](#part-5-i2c-lcd-display)
+- [Part 6: Web Interface Files](#part-6-web-interface-files)
 - [Project Summary](#project-summary)
 
 ## Components Required
 
 - ESP32 development board
 - DHT11 temperature and humidity sensor
+- 16x2 I2C LCD Display (HD44780 compatible with PCF8574 I/O expander)
+- RGB LED (common cathode)
 - Jumper wires
 - Breadboard (optional)
 - USB cable for programming the ESP32
+- 4.7kΩ or 10kΩ pull-up resistor (for DHT11)
 
 ## Part 1: RGB LED Control
 
@@ -590,7 +594,500 @@ Common issues and solutions:
 3. **Intermittent Readings**: Ensure adequate delays between readings
 4. **No Response**: Check sensor power and GPIO pin configuration
 
-## Part 5: Web Interface Files
+## Part 5: I2C LCD Display
+
+The I2C LCD display provides local visual feedback for temperature and humidity readings. The implementation supports HD44780-compatible LCD displays connected via I2C interface using a PCF8574 I/O expander, commonly found in 16x2 and 20x4 LCD modules.
+
+### Hardware Configuration
+
+- **LCD Type**: HD44780-compatible with PCF8574 I2C backpack
+- **I2C Address**: 0x27 (default, configurable)
+- **Display Size**: 16x2 characters (configurable for 20x4)
+- **I2C Pins**: 
+  - SDA: GPIO 21 (default)
+  - SCL: GPIO 22 (default)
+- **I2C Frequency**: 100kHz
+- **Power**: 5V (typical) or 3.3V (depending on module)
+
+### Key Features
+
+- **I2C Communication**: Uses only 2 pins (SDA/SCL) for communication
+- **Backlight Control**: Software-controlled LCD backlight on/off
+- **Multiple Display Sizes**: Support for 16x2, 20x4, and other configurations
+- **Text Positioning**: Precise cursor control for formatted output
+- **Data Type Support**: String, integer, and floating-point number display
+- **HD44780 Compatibility**: Works with standard character LCD controllers
+
+### LCD Driver Implementation (`LiquidCrystal_I2C.c` and `LiquidCrystal_I2C.h`)
+
+#### Core Functions
+
+- **`LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)`:**
+  Initializes the I2C LCD display with specified address and dimensions. Performs complete LCD initialization sequence including 4-bit mode setup and display configuration.
+
+- **`lcd_clear(void)`:**
+  Clears all content from the display and returns cursor to position (0,0).
+
+- **`lcd_setCursor(uint8_t col, uint8_t row)`:**
+  Sets the cursor position for the next character output. Coordinates are zero-based.
+
+- **`lcd_print(const char* str)`:**
+  Displays a null-terminated string at the current cursor position.
+
+- **`lcd_printChar(char c)`:**
+  Displays a single character at the current cursor position.
+
+- **`lcd_printInt(int num)`:**
+  Displays an integer value with automatic string conversion.
+
+- **`lcd_printFloat(float num, uint8_t decimals)`:**
+  Displays a floating-point number with specified decimal places.
+
+#### Display Control Functions
+
+- **`lcd_home(void)`:**
+  Returns cursor to home position (0,0) without clearing display content.
+
+- **`backlight(void)` / `no_backlight(void)`:**
+  Controls LCD backlight on/off state for power saving and visibility control.
+
+- **`display(void)` / `no_display(void)`:**
+  Turns the display output on or off while preserving display memory content.
+
+- **`cursor(void)` / `no_cursor(void)`:**
+  Shows or hides the cursor indicator at the current position.
+
+- **`blink(void)` / `no_blink(void)`:**
+  Enables or disables cursor blinking effect.
+
+#### Text Control Functions
+
+- **`left_to_right(void)` / `right_to_left(void)`:**
+  Sets text direction for character entry and display shifting.
+
+- **`scroll_display_left(void)` / `scroll_display_right(void)`:**
+  Scrolls the entire display content in the specified direction.
+
+- **`autoscroll(void)` / `no_autoscroll(void)`:**
+  Enables or disables automatic display scrolling when reaching display edges.
+
+### I2C Communication Protocol
+
+The LCD uses PCF8574 I/O expander with the following pin mapping:
+
+```c
+// PCF8574 Pin Mapping for LCD Control
+#define LCD_RS_PIN      0x01    // Register Select pin
+#define LCD_ENABLE_PIN  0x04    // Enable pin  
+#define LCD_D4_PIN      0x10    // Data pin 4
+#define LCD_D5_PIN      0x20    // Data pin 5
+#define LCD_D6_PIN      0x40    // Data pin 6
+#define LCD_D7_PIN      0x80    // Data pin 7
+#define LCD_BACKLIGHT_ON 0x08   // Backlight control
+```
+
+### Weather Station Integration
+
+The LCD displays real-time weather information with the following layout:
+
+**Normal Operation:**
+```
+Line 1: Temp: 23°C
+Line 2: Humidity: 65%
+```
+
+**Error State:**
+```
+Line 1: Sensor Error!
+Line 2: Check DHT11
+```
+
+**Startup:**
+```
+Line 1: Weather Station
+Line 2: Initializing...
+```
+
+### Implementation Details
+
+#### Initialization Sequence
+
+The LCD requires a specific initialization sequence for reliable 4-bit mode operation:
+
+1. **Power-up Delay**: 50ms wait after power application
+2. **Function Set Sequence**: Three 8-bit mode commands followed by 4-bit mode switch
+3. **Configuration**: Set display parameters (2-line mode, 5x8 character size)
+4. **Display Setup**: Clear display, set entry mode, enable display
+5. **Backlight Control**: Enable backlight for visibility
+
+#### Error Handling
+
+- **I2C Communication Errors**: Proper error checking for I2C transactions
+- **Parameter Validation**: Boundary checking for cursor positions and display limits
+- **Initialization Verification**: Confirms successful LCD initialization before operation
+
+### Troubleshooting
+
+Common LCD issues and solutions:
+
+1. **No Display**: Check I2C address (use I2C scanner), verify power connections
+2. **Garbled Characters**: Verify I2C wiring, check for loose connections
+3. **No Backlight**: Check backlight jumper on I2C module, verify power supply
+4. **Wrong Characters**: Confirm LCD character set (HD44780 compatible)
+5. **Cursor Issues**: Verify cursor positioning calls and display bounds
+
+### Design Notes
+
+- Uses 4-bit mode for reduced pin count via I2C interface
+- Implements proper timing delays for HD44780 command execution
+- Supports both 5V and 3.3V I2C modules (check module specifications)
+- Thread-safe when used with proper FreeRTOS task scheduling
+- Optimized for minimal I2C traffic with efficient command batching
+
+### Step-by-Step LCD Driver Development Guide
+
+This section provides a comprehensive guide for creating an I2C LCD driver from scratch. Follow these steps to understand the complete implementation process:
+
+#### Step 1: Understanding the Hardware Architecture
+
+**LCD Controller (HD44780):**
+- The HD44780 is a character LCD controller that manages display memory (DDRAM) and character generation
+- Operates in 4-bit or 8-bit parallel mode
+- Requires multiple control signals: RS (Register Select), Enable, and data pins
+
+**I2C Interface (PCF8574):**
+- The PCF8574 is an 8-bit I/O expander that converts I2C signals to parallel
+- Reduces ESP32 pin usage from 6+ pins to just 2 (SDA/SCL)
+- Maps LCD control signals to its 8 output pins
+
+**Signal Mapping:**
+```c
+PCF8574 Pin | LCD Signal | Purpose
+------------|------------|----------
+P0          | RS         | Register Select (Command/Data)
+P1          | RW         | Read/Write (tied to GND for write-only)
+P2          | Enable     | Enable pulse for data latching
+P3          | Backlight  | LED backlight control
+P4          | D4         | Data bit 4 (4-bit mode)
+P5          | D5         | Data bit 5
+P6          | D6         | Data bit 6
+P7          | D7         | Data bit 7
+```
+
+#### Step 2: Setting Up the Header File (`LiquidCrystal_I2C.h`)
+
+Create the header file with essential definitions:
+
+```c
+#ifndef LIQUIDCRYSTAL_I2C_H
+#define LIQUIDCRYSTAL_I2C_H
+
+#include <stdint.h>
+#include "esp_err.h"
+
+// I2C Configuration
+#define LCD_I2C_MASTER_PORT    I2C_NUM_0
+#define LCD_I2C_SDA_PIN        21
+#define LCD_I2C_SCL_PIN        22
+#define LCD_I2C_MASTER_FREQ_HZ 100000
+
+// HD44780 Commands
+#define LCD_CLEAR_DISPLAY      0x01
+#define LCD_RETURN_HOME        0x02
+#define LCD_ENTRY_MODE         0x04
+#define LCD_DISPLAY_ON_OFF     0x08
+#define LCD_FUNCTION_SET       0x20
+#define LCD_SET_DDRAM_ADDRESS  0x80
+
+// PCF8574 Pin Mapping
+#define LCD_RS_PIN             0x01
+#define LCD_ENABLE_PIN         0x04
+#define LCD_BACKLIGHT_ON       0x08
+
+// Timing Constants
+#define LCD_DELAY_COMMAND      50
+#define LCD_DELAY_ENABLE_PULSE 1
+
+// Function Prototypes
+esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows);
+void lcd_clear(void);
+void lcd_setCursor(uint8_t col, uint8_t row);
+void lcd_print(const char* str);
+// ... more function prototypes
+
+#endif
+```
+
+#### Step 3: I2C Master Initialization
+
+Set up ESP32 I2C master configuration:
+
+```c
+static esp_err_t i2c_master_init(void)
+{
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = LCD_I2C_SDA_PIN,
+        .scl_io_num = LCD_I2C_SCL_PIN,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = LCD_I2C_MASTER_FREQ_HZ,
+    };
+    
+    ESP_ERROR_CHECK(i2c_param_config(LCD_I2C_MASTER_PORT, &conf));
+    ESP_ERROR_CHECK(i2c_driver_install(LCD_I2C_MASTER_PORT, conf.mode, 0, 0, 0));
+    
+    return ESP_OK;
+}
+```
+
+#### Step 4: Low-Level I2C Communication
+
+Implement basic I2C write function:
+
+```c
+static esp_err_t lcd_write_byte(uint8_t data)
+{
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (lcd_addr << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, data, true);
+    i2c_master_stop(cmd);
+    
+    esp_err_t ret = i2c_master_cmd_begin(LCD_I2C_MASTER_PORT, cmd, pdMS_TO_TICKS(100));
+    i2c_cmd_link_delete(cmd);
+    
+    return ret;
+}
+```
+
+#### Step 5: 4-Bit Mode Implementation
+
+The HD44780 requires a specific sequence to switch from 8-bit to 4-bit mode:
+
+```c
+static void lcd_write_nibble(uint8_t nibble)
+{
+    uint8_t data = nibble | lcd_backlight;  // Combine with backlight state
+    lcd_write_byte(data);                   // Send data
+    lcd_pulse_enable(data);                 // Pulse enable pin
+}
+
+static void lcd_pulse_enable(uint8_t data)
+{
+    lcd_write_byte(data | LCD_ENABLE_PIN);  // Enable high
+    esp_rom_delay_us(LCD_DELAY_ENABLE_PULSE);
+    lcd_write_byte(data & ~LCD_ENABLE_PIN); // Enable low
+    esp_rom_delay_us(LCD_DELAY_ENABLE_PULSE);
+}
+```
+
+#### Step 6: Command and Data Transmission
+
+Implement functions to send commands and data:
+
+```c
+static void lcd_send_command(uint8_t cmd)
+{
+    uint8_t upper_nibble = cmd & 0xF0;        // Get upper 4 bits
+    uint8_t lower_nibble = (cmd << 4) & 0xF0; // Shift lower 4 bits
+    
+    lcd_write_nibble(upper_nibble);           // Send upper nibble
+    lcd_write_nibble(lower_nibble);           // Send lower nibble
+    
+    esp_rom_delay_us(LCD_DELAY_COMMAND);      // Wait for command execution
+}
+
+static void lcd_send_data(uint8_t data)
+{
+    uint8_t upper_nibble = data & 0xF0;
+    uint8_t lower_nibble = (data << 4) & 0xF0;
+    
+    // Send with RS high for data mode
+    lcd_write_nibble(upper_nibble | LCD_RS_PIN);
+    lcd_write_nibble(lower_nibble | LCD_RS_PIN);
+    
+    esp_rom_delay_us(LCD_DELAY_COMMAND);
+}
+```
+
+#### Step 7: LCD Initialization Sequence
+
+The most critical part - proper initialization sequence:
+
+```c
+esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)
+{
+    lcd_addr = addr;
+    ESP_ERROR_CHECK(i2c_master_init());
+    
+    // Critical timing: Wait 50ms after power-up
+    vTaskDelay(pdMS_TO_TICKS(50));
+    
+    // HD44780 initialization sequence for 4-bit mode
+    lcd_write_nibble(0x30);  // Function set: 8-bit mode
+    vTaskDelay(pdMS_TO_TICKS(5));
+    lcd_write_nibble(0x30);  // Function set: 8-bit mode
+    vTaskDelay(pdMS_TO_TICKS(1));
+    lcd_write_nibble(0x30);  // Function set: 8-bit mode
+    vTaskDelay(pdMS_TO_TICKS(1));
+    lcd_write_nibble(0x20);  // Function set: 4-bit mode
+    
+    // Now in 4-bit mode, send full commands
+    lcd_send_command(0x28); // 4-bit, 2-line, 5x8 dots
+    lcd_send_command(0x08); // Display off
+    lcd_send_command(0x01); // Clear display
+    vTaskDelay(pdMS_TO_TICKS(2)); // Clear needs extra time
+    lcd_send_command(0x06); // Entry mode: increment, no shift
+    lcd_send_command(0x0C); // Display on, cursor off, blink off
+    
+    return ESP_OK;
+}
+```
+
+#### Step 8: High-Level Functions Implementation
+
+Build user-friendly functions on top of low-level operations:
+
+```c
+void lcd_print(const char* str)
+{
+    while (*str) {
+        lcd_send_data(*str++);
+    }
+}
+
+void lcd_setCursor(uint8_t col, uint8_t row)
+{
+    uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};
+    uint8_t address = col + row_offsets[row];
+    lcd_send_command(LCD_SET_DDRAM_ADDRESS | address);
+}
+
+void lcd_clear(void)
+{
+    lcd_send_command(LCD_CLEAR_DISPLAY);
+    vTaskDelay(pdMS_TO_TICKS(2)); // Clear command needs extra time
+}
+```
+
+#### Step 9: Error Handling and Validation
+
+Add robust error handling:
+
+```c
+void lcd_setCursor(uint8_t col, uint8_t row)
+{
+    // Validate parameters
+    if (row >= lcd_rows) row = lcd_rows - 1;
+    if (col >= lcd_cols) col = lcd_cols - 1;
+    
+    uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};
+    uint8_t address = col + row_offsets[row];
+    lcd_send_command(LCD_SET_DDRAM_ADDRESS | address);
+}
+
+esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)
+{
+    // Test I2C communication before proceeding
+    esp_err_t ret = lcd_write_byte(0x00);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "LCD not found at address 0x%02X", addr);
+        return ret;
+    }
+    
+    // Continue with initialization...
+}
+```
+
+#### Step 10: Advanced Features
+
+Implement additional features for enhanced functionality:
+
+```c
+void lcd_printFloat(float num, uint8_t decimals)
+{
+    char buffer[16];
+    char format[8];
+    snprintf(format, sizeof(format), "%%.%df", decimals);
+    snprintf(buffer, sizeof(buffer), format, num);
+    lcd_print(buffer);
+}
+
+void backlight(void)
+{
+    lcd_backlight = LCD_BACKLIGHT_ON;
+    lcd_write_byte(lcd_backlight);
+}
+
+void no_backlight(void)
+{
+    lcd_backlight = LCD_BACKLIGHT_OFF;
+    lcd_write_byte(0x00);
+}
+```
+
+#### Step 11: Integration with Main Application
+
+Integrate the LCD driver with your weather station:
+
+```c
+// In main.c
+void app_main(void)
+{
+    // Initialize LCD
+    ESP_ERROR_CHECK(LiquidCrystal_I2C_Init(0x27, 16, 2));
+    
+    // Display startup message
+    lcd_clear();
+    lcd_setCursor(0, 0);
+    lcd_print("Weather Station");
+    lcd_setCursor(0, 1);
+    lcd_print("Initializing...");
+    
+    // Your main application code...
+}
+
+// In sensor task
+void display_weather_data(float temperature, float humidity)
+{
+    lcd_clear();
+    
+    // Line 1: Temperature
+    lcd_setCursor(0, 0);
+    lcd_print("Temp: ");
+    lcd_printFloat(temperature, 1);
+    lcd_print("°C");
+    
+    // Line 2: Humidity
+    lcd_setCursor(0, 1);
+    lcd_print("Humidity: ");
+    lcd_printFloat(humidity, 0);
+    lcd_print("%");
+}
+```
+
+#### Key Learning Points
+
+1. **Timing is Critical**: HD44780 requires specific delays between commands
+2. **4-bit Mode Setup**: The initialization sequence must be followed exactly
+3. **I2C Communication**: Proper error handling for I2C transactions is essential
+4. **Memory Management**: Be cautious with string buffers and stack usage
+5. **Pin Mapping**: Understanding PCF8574 pin assignments is crucial
+6. **Error Recovery**: Implement retry mechanisms for communication failures
+
+#### Common Pitfalls to Avoid
+
+1. **Insufficient Delays**: Not waiting long enough between commands
+2. **Wrong Initialization Sequence**: Skipping steps in the 4-bit mode setup
+3. **I2C Address Issues**: Not scanning for the correct device address
+4. **Timing Violations**: Enable pulse timing too fast for HD44780
+5. **Memory Overflow**: DDRAM address calculations beyond display boundaries
+6. **Power Issues**: Insufficient power supply for LCD and backlight
+
+This comprehensive guide provides the foundation for understanding and implementing I2C LCD drivers for embedded systems, specifically optimized for ESP32 and ESP-IDF framework development.
+
+## Part 6: Web Interface Files
 
 The project includes a complete web interface located in the `src/webpage/` directory. These files are embedded into the ESP32 firmware using PlatformIO's `board_build.embed_files` feature.
 
