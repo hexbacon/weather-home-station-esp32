@@ -19,6 +19,7 @@
 #include "DHT11.h"
 #include "esp_log.h"
 #include "rgb_led.h"
+#include <stdbool.h>
 
 void app_main(void)
 {
@@ -33,33 +34,41 @@ void app_main(void)
 
     // Start WiFi application (Access Point + Station mode capability)
     wifi_app_start();
-    
+
     // Initialize DHT11 temperature and humidity sensor on GPIO 4
     dht11_t sensor;
     dht11_init(&sensor, 4);
-    
+
     // Configure sensor reading interval (1 minute between readings)
     const TickType_t xDelay = 60000 / portTICK_PERIOD_MS;
-    
+
     // Initial delay to allow system components to stabilize
     vTaskDelay(pdMS_TO_TICKS(2000));
-    
+
+    // Sign boo
+    bool temp_sign = true;
+
     // Main sensor reading loop
-    while (1) 
+    while (1)
     {
-        if (dht11_read(&sensor) == ESP_OK) 
+        if (dht11_read(&sensor) == ESP_OK)
         {
+            // Format string
+            char format_temp[8];
+            sprintf(format_temp, temp_sign ? "°F" : "°C");
             // Log successful sensor reading
-            ESP_LOGI("DHT11", "Temperature: %d°C, Humidity: %d%%",
-                     dht11_get_temperature(&sensor),
+            ESP_LOGI("DHT11", "Temperature: %d%s, Humidity: %d%%",
+                     dht11_get_temperature(&sensor, true),
+                     format_temp,
                      dht11_get_humidity(&sensor));
-        } else 
+        }
+        else
         {
             // Log sensor read failure and indicate error via LED
             ESP_LOGI("DHT11", "Failed to read from sensor");
             rgb_led_error();
         }
-        
+
         // Wait for next reading cycle (DHT11 requires minimum 2 second intervals)
         vTaskDelay(xDelay);
     }

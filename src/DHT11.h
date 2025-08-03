@@ -18,6 +18,7 @@
 #define MAIN_DHT11_H_
 
 #include "esp_err.h"
+#include <stdbool.h>
 
 // DHT11 Sensor Configuration Constants
 #define DHT11_GPIO_SENSOR_PIN               4           ///< Default GPIO pin for DHT11 sensor data line
@@ -77,12 +78,13 @@ esp_err_t dht11_read(dht11_t *sensor);
  * Returns the temperature value from the most recent successful sensor read.
  * 
  * @param sensor Pointer to DHT11 sensor structure
- * @return Temperature in degrees Celsius (0-50°C range)
+ * @param fahrenheit If true, returns temperature in Fahrenheit; if false, returns Celsius
+ * @return Temperature in degrees Celsius (0-50°C range) or Fahrenheit
  * 
  * @note Returns the cached value, does not perform a new sensor read
  * @note Call dht11_read() first to get fresh data
  */
-int dht11_get_temperature(dht11_t *sensor);
+int dht11_get_temperature(dht11_t *sensor, bool fahrenheit);
 
 /**
  * @brief Get the last read humidity value

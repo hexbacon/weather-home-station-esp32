@@ -22,6 +22,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "rgb_led.h"
+#include <stdbool.h>
 
 // DHT11 protocol constants
 #define DHT_MAX_TIMINGS 85          // Maximum expected timing pulses
@@ -182,9 +183,11 @@ esp_err_t dht11_read(dht11_t *sensor)
     return result;
 }
 
-int dht11_get_temperature(dht11_t *sensor)
+int dht11_get_temperature(dht11_t *sensor, bool fahrenheit)
 {
     // Return cached temperature value from last successful read
+    if (fahrenheit)
+        return dht11_celsius_to_fahrenheit(sensor->temperature);
     return sensor->temperature;
 }
 
