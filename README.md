@@ -604,8 +604,8 @@ The I2C LCD display provides local visual feedback for temperature and humidity 
 - **I2C Address**: 0x27 (default, configurable)
 - **Display Size**: 16x2 characters (configurable for 20x4)
 - **I2C Pins**: 
-  - SDA: GPIO 21 (default)
-  - SCL: GPIO 22 (default)
+  - SDA: GPIO 27 (default)
+  - SCL: GPIO 26 (default)
 - **I2C Frequency**: 100kHz
 - **Power**: 5V (typical) or 3.3V (depending on module)
 
@@ -622,25 +622,25 @@ The I2C LCD display provides local visual feedback for temperature and humidity 
 
 #### Core Functions
 
-- **`LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)`:**
+- **`liquid_crystal_i2c_init(uint8_t addr, uint8_t cols, uint8_t rows)`:**
   Initializes the I2C LCD display with specified address and dimensions. Performs complete LCD initialization sequence including 4-bit mode setup and display configuration.
 
 - **`lcd_clear(void)`:**
   Clears all content from the display and returns cursor to position (0,0).
 
-- **`lcd_setCursor(uint8_t col, uint8_t row)`:**
+- **`lcd_set_cursor(uint8_t col, uint8_t row)`:**
   Sets the cursor position for the next character output. Coordinates are zero-based.
 
 - **`lcd_print(const char* str)`:**
   Displays a null-terminated string at the current cursor position.
 
-- **`lcd_printChar(char c)`:**
+- **`lcd_print_char(char c)`:**
   Displays a single character at the current cursor position.
 
-- **`lcd_printInt(int num)`:**
+- **`lcd_print_int(int num)`:**
   Displays an integer value with automatic string conversion.
 
-- **`lcd_printFloat(float num, uint8_t decimals)`:**
+- **`lcd_print_float(float num, uint8_t decimals)`:**
   Displays a floating-point number with specified decimal places.
 
 #### Display Control Functions
@@ -809,10 +809,13 @@ Create the header file with essential definitions:
 #define LCD_DELAY_ENABLE_PULSE 1
 
 // Function Prototypes
-esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows);
+esp_err_t liquid_crystal_i2c_init(uint8_t addr, uint8_t cols, uint8_t rows);
 void lcd_clear(void);
-void lcd_setCursor(uint8_t col, uint8_t row);
+void lcd_set_cursor(uint8_t col, uint8_t row);
 void lcd_print(const char* str);
+void lcd_print_char(char c);
+void lcd_print_int(int num);
+void lcd_print_float(float num, uint8_t decimals);
 // ... more function prototypes
 
 #endif
@@ -916,7 +919,7 @@ static void lcd_send_data(uint8_t data)
 The most critical part - proper initialization sequence:
 
 ```c
-esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)
+esp_err_t liquid_crystal_i2c_init(uint8_t addr, uint8_t cols, uint8_t rows)
 {
     lcd_addr = addr;
     ESP_ERROR_CHECK(i2c_master_init());
@@ -952,12 +955,13 @@ Build user-friendly functions on top of low-level operations:
 ```c
 void lcd_print(const char* str)
 {
-    while (*str) {
+    while (*str) 
+    {
         lcd_send_data(*str++);
     }
 }
 
-void lcd_setCursor(uint8_t col, uint8_t row)
+void lcd_set_cursor(uint8_t col, uint8_t row)
 {
     uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};
     uint8_t address = col + row_offsets[row];
@@ -976,18 +980,24 @@ void lcd_clear(void)
 Add robust error handling:
 
 ```c
-void lcd_setCursor(uint8_t col, uint8_t row)
+void lcd_set_cursor(uint8_t col, uint8_t row)
 {
     // Validate parameters
-    if (row >= lcd_rows) row = lcd_rows - 1;
-    if (col >= lcd_cols) col = lcd_cols - 1;
+    if (row >= lcd_rows) 
+    {
+        row = lcd_rows - 1;
+    }
+    if (col >= lcd_cols) 
+    {
+        col = lcd_cols - 1;
+    }
     
     uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};
     uint8_t address = col + row_offsets[row];
     lcd_send_command(LCD_SET_DDRAM_ADDRESS | address);
 }
 
-esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)
+esp_err_t liquid_crystal_i2c_init(uint8_t addr, uint8_t cols, uint8_t rows)
 {
     // Test I2C communication before proceeding
     esp_err_t ret = lcd_write_byte(0x00);
@@ -1005,7 +1015,7 @@ esp_err_t LiquidCrystal_I2C_Init(uint8_t addr, uint8_t cols, uint8_t rows)
 Implement additional features for enhanced functionality:
 
 ```c
-void lcd_printFloat(float num, uint8_t decimals)
+void lcd_print_float(float num, uint8_t decimals)
 {
     char buffer[16];
     char format[8];
@@ -1036,13 +1046,13 @@ Integrate the LCD driver with your weather station:
 void app_main(void)
 {
     // Initialize LCD
-    ESP_ERROR_CHECK(LiquidCrystal_I2C_Init(0x27, 16, 2));
+    ESP_ERROR_CHECK(liquid_crystal_i2c_init(0x27, 16, 2));
     
     // Display startup message
     lcd_clear();
-    lcd_setCursor(0, 0);
+    lcd_set_cursor(0, 0);
     lcd_print("Weather Station");
-    lcd_setCursor(0, 1);
+    lcd_set_cursor(0, 1);
     lcd_print("Initializing...");
     
     // Your main application code...
@@ -1054,15 +1064,15 @@ void display_weather_data(float temperature, float humidity)
     lcd_clear();
     
     // Line 1: Temperature
-    lcd_setCursor(0, 0);
+    lcd_set_cursor(0, 0);
     lcd_print("Temp: ");
-    lcd_printFloat(temperature, 1);
+    lcd_print_float(temperature, 1);
     lcd_print("°C");
     
     // Line 2: Humidity
-    lcd_setCursor(0, 1);
+    lcd_set_cursor(0, 1);
     lcd_print("Humidity: ");
-    lcd_printFloat(humidity, 0);
+    lcd_print_float(humidity, 0);
     lcd_print("%");
 }
 ```
@@ -1163,6 +1173,21 @@ The ESP32 Weather Station is built using a modular, task-based architecture:
 - **OTA Updates**: Remote firmware updates via web interface
 - **Real-time Monitoring**: Live temperature and humidity display
 - **Visual Status**: RGB LED indicates system state
+- **Local Display**: I2C LCD shows current weather data locally
+- **Professional Code Quality**: Snake_case naming convention and Allman style formatting
+
+### Recent Updates
+
+**Code Quality Improvements (August 2025)**:
+- Updated all LCD function names to follow snake_case convention:
+  - `LiquidCrystal_I2C_Init()` → `liquid_crystal_i2c_init()`
+  - `lcd_setCursor()` → `lcd_set_cursor()`
+  - `lcd_printChar()` → `lcd_print_char()`
+  - `lcd_printInt()` → `lcd_print_int()`
+  - `lcd_printFloat()` → `lcd_print_float()`
+- Applied Allman style formatting consistently across all source files
+- Enhanced inline documentation with comprehensive single-line comments
+- Updated README code examples to reflect current function names
 - **Robust Error Handling**: Automatic retry and error recovery
 - **Modular Design**: Clean separation of concerns across modules
 
